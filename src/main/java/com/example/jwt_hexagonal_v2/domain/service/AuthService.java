@@ -1,5 +1,8 @@
 package com.example.jwt_hexagonal_v2.domain.service;
 
+import com.example.jwt_hexagonal_v2.adapter.in.web.exception.BadRequestException;
+import com.example.jwt_hexagonal_v2.adapter.in.web.exception.UserNotFoundException;
+import com.example.jwt_hexagonal_v2.adapter.in.web.exception.messages.ErrorMessages;
 import com.example.jwt_hexagonal_v2.domain.model.RefreshToken;
 import com.example.jwt_hexagonal_v2.domain.model.User;
 import com.example.jwt_hexagonal_v2.domain.port.in.AuthUseCase;
@@ -137,7 +140,9 @@ public class AuthService implements AuthUseCase {
 
     private User getUserByEmailOrThrow(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() ->
+                        new UserNotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, email))
+                );
     }
 
 }
