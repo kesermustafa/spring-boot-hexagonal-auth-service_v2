@@ -8,6 +8,9 @@ public class ErrorMessages {
     public static final String USER_DISABLED = "Hesabınız devre dışı bırakılmış. Lütfen destek ekibi ile iletişime geçin";
     public static final String INVALID_REFRESH_TOKEN = "Geçersiz refresh token";
 
+
+    public static final String REFRESH_TOKEN_REUSE_DETECTED = "Refresh token reuse detected";
+
     public final static String RESOURCE_NOT_FOUNT_EXCEPTION = "Resource with id %s not found";
     public final static String ROLE_NOT_FOUNT_EXCEPTION = "Role : %s not found";
     public final static String USER_NOT_FOUNT_EXCEPTION = "User with email : %s not found";

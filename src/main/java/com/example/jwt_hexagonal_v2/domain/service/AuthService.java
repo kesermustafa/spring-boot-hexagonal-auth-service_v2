@@ -2,6 +2,7 @@ package com.example.jwt_hexagonal_v2.domain.service;
 
 import com.example.jwt_hexagonal_v2.domain.exception.InvalidRefreshTokenException;
 import com.example.jwt_hexagonal_v2.domain.exception.RefreshTokenExpiredException;
+import com.example.jwt_hexagonal_v2.domain.exception.SecurityViolationException;
 import com.example.jwt_hexagonal_v2.domain.exception.UserNotFoundException;
 import com.example.jwt_hexagonal_v2.domain.messages.ErrorMessages;
 import com.example.jwt_hexagonal_v2.domain.model.RefreshToken;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -55,17 +57,34 @@ public class AuthService implements AuthUseCase {
     public AuthResponse refresh(String rawRefreshToken) {
 
         String encrypted = cryptoService.encrypt(rawRefreshToken);
+        Instant now = Instant.now();
 
-        RefreshToken token = refreshTokenPort
-                .findValidByToken(encrypted, Instant.now())
-                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
+        Optional<RefreshToken> validOpt =
+                refreshTokenPort.findValidByToken(encrypted, now);
 
-        token.setUsed(true);
-        refreshTokenPort.save(token);
-        refreshTokenPort.flush();
+        if (validOpt.isPresent()) {
+            RefreshToken valid = validOpt.get();
 
-        return createTokens(token.getUser());
+            valid.setUsed(true);
+            refreshTokenPort.save(valid);
+            refreshTokenPort.flush();
+
+            return createTokens(valid.getUser());
+        }
+
+        RefreshToken existing = refreshTokenPort.findByToken(encrypted)
+                .orElseThrow(() -> new InvalidRefreshTokenException(ErrorMessages.INVALID_REFRESH_TOKEN));
+
+        // ✅ 3) DB'de var ama valid değil → reuse veya expired
+        if (existing.isUsed()) {
+            handleReuseAttack(existing.getUser().getId());
+            throw new SecurityViolationException(ErrorMessages.REFRESH_TOKEN_REUSE_DETECTED);
+        }
+
+
+        throw new RefreshTokenExpiredException(ErrorMessages.REFRESH_TOKEN_EXPIRED);
     }
+
 
 
 
@@ -98,7 +117,6 @@ public class AuthService implements AuthUseCase {
                 .build();
 
         user.addRefreshToken(refreshToken);
-
         refreshTokenPort.save(refreshToken);
         refreshTokenPort.flush();
 

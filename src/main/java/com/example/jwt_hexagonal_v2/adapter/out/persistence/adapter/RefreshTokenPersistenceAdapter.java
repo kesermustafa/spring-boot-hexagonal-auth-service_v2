@@ -19,6 +19,11 @@ public class RefreshTokenPersistenceAdapter implements RefreshTokenPort {
 
 
     @Override
+    public Optional<RefreshToken> findByTokenAndUsedFalseAndExpiryDateAfter(String token, Instant now) {
+        return repository.findByTokenAndUsedFalseAndExpiryDateAfter(token, now);
+    }
+
+    @Override
     public Optional<RefreshToken> findValidByToken(String token, Instant now) {
         return repository.findByTokenAndUsedFalseAndExpiryDateAfter(token, now);
     }
