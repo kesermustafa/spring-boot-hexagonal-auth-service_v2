@@ -206,7 +206,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return buildError(
                 HttpStatus.UNAUTHORIZED,
-                ErrorMessages.INVALID_REFRESH_TOKEN,
+                ex.getMessage(),
                 request
         );
     }

@@ -6,40 +6,26 @@ import com.example.jwt_hexagonal_v2.domain.port.out.RefreshTokenPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 @Component
 @RequiredArgsConstructor
 public class RefreshTokenPersistenceAdapter implements RefreshTokenPort {
 
     private final RefreshTokenJpaRepository repository;
-    private final RefreshTokenJpaRepository jpaRepository;
+
 
     @Override
-    public Optional<RefreshToken>
-    findByTokenAndUsedFalseAndExpiryDateAfter(
-            String token,
-            Instant now
-    ) {
-        return jpaRepository
-                .findByTokenAndUsedFalseAndExpiryDateAfter(token, now);
+    public Optional<RefreshToken> findValidByToken(String token, Instant now) {
+        return repository.findByTokenAndUsedFalseAndExpiryDateAfter(token, now);
     }
 
     @Override
-    public void deleteAllByUserId(UUID userId) {
-        repository.deleteAllByUser_Id(userId);
-    }
-
-    @Override
-    public Optional<RefreshToken> findByToken(String encryptedToken) {
-        return repository.findByToken(encryptedToken);
-    }
-
-    @Override
-    public Optional<RefreshToken> findByUserId(UUID userId) {
-        return repository.findByUser_Id(userId);
+    public Optional<RefreshToken> findByToken(String token) {
+        return repository.findByToken(token);
     }
 
     @Override
@@ -53,8 +39,8 @@ public class RefreshTokenPersistenceAdapter implements RefreshTokenPort {
     }
 
     @Override
-    public void deleteByUserId(UUID userId) {
-        repository.deleteByUser_Id(userId);
+    public void deleteAllByUserId(UUID userId) {
+        repository.deleteAllByUser_Id(userId);
     }
 
     @Override

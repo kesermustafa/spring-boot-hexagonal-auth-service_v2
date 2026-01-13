@@ -56,27 +56,18 @@ public class AuthService implements AuthUseCase {
 
         String encrypted = cryptoService.encrypt(rawRefreshToken);
 
-        RefreshToken existing = refreshTokenPort.findByToken(encrypted).orElseThrow(InvalidRefreshTokenException::new);
+        RefreshToken token = refreshTokenPort
+                .findValidByToken(encrypted, Instant.now())
+                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
-        // 🔥 GERÇEK REUSE DETECTION
-        if (existing.isUsed()) {
-            handleReuseAttack(existing.getUser().getId());
-            throw new InvalidRefreshTokenException();
-        }
-
-        if (existing.getExpiryDate().isBefore(Instant.now())) {
-            refreshTokenPort.delete(existing);
-            refreshTokenPort.flush();
-            throw new RefreshTokenExpiredException(
-                    ErrorMessages.REFRESH_TOKEN_EXPIRED);
-        }
-
-        existing.setUsed(true);
-        refreshTokenPort.save(existing);
+        token.setUsed(true);
+        refreshTokenPort.save(token);
         refreshTokenPort.flush();
 
-        return createTokens(existing.getUser());
+        return createTokens(token.getUser());
     }
+
+
 
     @Transactional
     @Override
@@ -87,6 +78,7 @@ public class AuthService implements AuthUseCase {
         refreshTokenPort.findByToken(encrypted)
                 .ifPresent(refreshTokenPort::delete);
     }
+
 
     private AuthResponse createTokens(User user) {
 
@@ -101,20 +93,21 @@ public class AuthService implements AuthUseCase {
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(encryptedRefreshToken)
-                .user(user)
-                .expiryDate(
-                        Instant.now().plusSeconds(jwtProperties.refreshTokenExpiration())
-                )
+                .expiryDate(Instant.now().plusSeconds(jwtProperties.refreshTokenExpiration()))
                 .used(false)
                 .build();
 
+        user.addRefreshToken(refreshToken);
+
         refreshTokenPort.save(refreshToken);
+        refreshTokenPort.flush();
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(rawRefreshToken)
                 .build();
     }
+
 
 
     private void handleReuseAttack(UUID userId) {

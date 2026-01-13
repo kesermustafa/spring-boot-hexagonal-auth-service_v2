@@ -43,4 +43,15 @@ public class User {
             orphanRemoval = true
     )
     private List<RefreshToken> refreshTokens = new ArrayList<>();
+
+    public void addRefreshToken(RefreshToken token) {
+        refreshTokens.add(token);
+        token.setUser(this);
+    }
+
+    public void removeRefreshToken(RefreshToken token) {
+        refreshTokens.remove(token);
+        token.setUser(null);
+    }
+
 }

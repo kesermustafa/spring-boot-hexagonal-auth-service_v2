@@ -3,7 +3,7 @@ package com.example.jwt_hexagonal_v2.domain.messages;
 public class ErrorMessages {
 
 
-    public static final String USER_NOT_FOUND = "Email adresi '%s' ile kayıtlı kullanıcı bulunamadı";
+    public static final String USER_NOT_FOUND = "No user registered with email address '%s'";
     public static final String INVALID_CREDENTIALS = "Email veya şifre hatalı";
     public static final String USER_DISABLED = "Hesabınız devre dışı bırakılmış. Lütfen destek ekibi ile iletişime geçin";
     public static final String INVALID_REFRESH_TOKEN = "Geçersiz refresh token";
