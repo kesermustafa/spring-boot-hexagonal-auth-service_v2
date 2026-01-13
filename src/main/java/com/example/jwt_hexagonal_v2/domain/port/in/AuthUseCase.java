@@ -11,4 +11,8 @@ public interface AuthUseCase {
     void logout(String refreshToken);
 
     void logoutAllDevices(String email);
+
+    AuthResponse loginWithGoogle(String idToken);
+
+    void linkGoogleAccount(String currentUserEmail, String googleIdToken);
 }

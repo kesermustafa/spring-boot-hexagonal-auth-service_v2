@@ -1,18 +1,21 @@
 package com.example.jwt_hexagonal_v2.adapter.in.web;
 
-import com.example.jwt_hexagonal_v2.adapter.in.web.dto.AuthResponseDto;
-import com.example.jwt_hexagonal_v2.adapter.in.web.dto.LoginRequest;
-import com.example.jwt_hexagonal_v2.adapter.in.web.dto.RefreshTokenRequest;
-import com.example.jwt_hexagonal_v2.adapter.in.web.dto.RegisterRequest;
+import com.example.jwt_hexagonal_v2.adapter.in.web.dto.*;
+import com.example.jwt_hexagonal_v2.domain.model.User;
 import com.example.jwt_hexagonal_v2.domain.port.in.AuthUseCase;
 import com.example.jwt_hexagonal_v2.domain.port.in.UserUseCase;
+import com.example.jwt_hexagonal_v2.domain.port.out.UserRepositoryPort;
+import com.example.jwt_hexagonal_v2.domain.service.dto.AuthResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,6 +24,7 @@ public class AuthController {
 
     private final AuthUseCase authUseCase;
     private final UserUseCase userUseCase;
+    private final UserRepositoryPort userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<Void> register(
@@ -70,5 +74,24 @@ public class AuthController {
         authUseCase.logoutAllDevices(userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> googleLogin(@RequestBody GoogleLoginRequest req) {
+        return ResponseEntity.ok(authUseCase.loginWithGoogle(req.idToken()));
+    }
+
+    @PostMapping("/google/link")
+    public ResponseEntity<Void> linkGoogle(@RequestBody @Valid LinkGoogleRequest request,
+                                           Authentication authentication) {
+
+        UUID userId = (UUID) authentication.getPrincipal();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        authUseCase.linkGoogleAccount(user.getEmail(), request.idToken());
+
+        return ResponseEntity.noContent().build();
+    }
+
 
 }

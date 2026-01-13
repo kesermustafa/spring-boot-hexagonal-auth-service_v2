@@ -2,6 +2,7 @@ package com.example.jwt_hexagonal_v2.adapter.out.persistence.adapter;
 
 
 import com.example.jwt_hexagonal_v2.adapter.out.persistence.jpa.UserJpaRepository;
+import com.example.jwt_hexagonal_v2.domain.enums.AuthProvider;
 import com.example.jwt_hexagonal_v2.domain.model.User;
 import com.example.jwt_hexagonal_v2.domain.port.out.UserRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -34,5 +35,10 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
     @Override
     public boolean existsByEmail(String email) {
         return userJpaRepository.existsByEmail(email);
+    }
+
+    @Override
+    public Optional<User> findByProviderAndProviderId(AuthProvider provider, String providerId) {
+        return userJpaRepository.findByProviderAndProviderId(provider, providerId);
     }
 }

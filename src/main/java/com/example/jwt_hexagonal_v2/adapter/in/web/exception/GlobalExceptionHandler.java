@@ -211,6 +211,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InvalidGoogleTokenException.class)
+    public ResponseEntity<Object> handleInvalidGoogleToken(
+            InvalidGoogleTokenException ex, WebRequest request
+    ) {
+        return buildError(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
+
     @ExceptionHandler(MalformedJwtException.class)
     public ResponseEntity<Object> handleMalformedJwt(
             MalformedJwtException ex, WebRequest request) {

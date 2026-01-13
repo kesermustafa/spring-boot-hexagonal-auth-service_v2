@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -23,7 +25,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal( HttpServletRequest request, HttpServletResponse response, FilterChain filterChain
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
     ) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
@@ -37,31 +42,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (jwtTokenProvider.validateToken(token)) {
 
+            String role = jwtTokenProvider.getRoleFromToken(token); // "USER" / "ADMIN"
+            var authorities = (role == null || role.isBlank())
+                    ? Collections.<GrantedAuthority>emptyList()
+                    : Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_" + role));
+
+
             var authentication = new UsernamePasswordAuthenticationToken(
                     jwtTokenProvider.getUserIdFromToken(token),
                     null,
-                    Collections.emptyList()
+                    authorities
             );
 
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(request)
-            );
-
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-
 
         filterChain.doFilter(request, response);
     }
 
-
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-
-        return path.startsWith("/api/auth/login")
-                || path.startsWith("/api/auth/register")
-                || path.startsWith("/api/auth/refresh");
+        // Auth endpointleri JWT filter'dan muaf
+        return path.startsWith("/api/auth/");
     }
 }
-

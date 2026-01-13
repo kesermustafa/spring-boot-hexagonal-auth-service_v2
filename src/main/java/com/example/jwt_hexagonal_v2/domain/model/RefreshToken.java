@@ -41,6 +41,7 @@ public class RefreshToken {
     )
     private User user;
 
+    private Instant usedAt;
 
     @Override
     public boolean equals(Object o) {

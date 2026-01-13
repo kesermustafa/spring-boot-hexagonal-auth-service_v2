@@ -19,6 +19,7 @@ public interface RefreshTokenPort {
     void deleteAllByUserId(UUID userId);
     Optional<RefreshToken> findByTokenAndUsedFalseAndExpiryDateAfter(String token, Instant now);
 
+    Optional<RefreshToken> lockByToken(String token);
 
     void flush();
 }

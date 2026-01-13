@@ -49,6 +49,19 @@ public class RefreshTokenPersistenceAdapter implements RefreshTokenPort {
     }
 
     @Override
+    public Optional<RefreshToken> lockByToken(String token) {
+        return repository.lockByToken(token)
+                .map(entity -> RefreshToken.builder()
+                        .id(entity.getId())
+                        .token(entity.getToken())
+                        .user(entity.getUser()) // user mapping
+                        .expiryDate(entity.getExpiryDate())
+                        .used(entity.isUsed())
+                        .build()
+                );
+    }
+
+    @Override
     public void flush() {
         repository.flush();
     }

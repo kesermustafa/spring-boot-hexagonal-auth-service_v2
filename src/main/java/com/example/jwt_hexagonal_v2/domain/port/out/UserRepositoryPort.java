@@ -1,6 +1,7 @@
 package com.example.jwt_hexagonal_v2.domain.port.out;
 
 
+import com.example.jwt_hexagonal_v2.domain.enums.AuthProvider;
 import com.example.jwt_hexagonal_v2.domain.model.User;
 
 import java.util.Optional;
@@ -15,4 +16,6 @@ public interface UserRepositoryPort {
     User save(User user);
 
     boolean existsByEmail(String email);
+
+    Optional<User> findByProviderAndProviderId(AuthProvider provider, String providerId);
 }
