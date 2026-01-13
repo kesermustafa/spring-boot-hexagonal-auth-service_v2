@@ -2,7 +2,6 @@ package com.example.jwt_hexagonal_v2.adapter.in.web.exception;
 
 
 
-import com.example.jwt_hexagonal_v2.adapter.in.web.exception.messages.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.http.HttpStatus;
@@ -10,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @RestController
@@ -29,12 +29,12 @@ public class CustomErrorController implements ErrorController {
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(httpStatus.value())
-                .error(httpStatus.getReasonPhrase())
+                .code(httpStatus.getReasonPhrase())
                 .message(httpStatus == HttpStatus.NOT_FOUND
                         ? "Endpoint bulunamadı"
                         : "Bir hata oluştu")
                 .path(path != null ? path.toString() : "")
-                .timestamp(String.valueOf(LocalDateTime.now()))
+                .timestamp(Instant.now())
                 .build();
 
         return ResponseEntity.status(httpStatus).body(error);

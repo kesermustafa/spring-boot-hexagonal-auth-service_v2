@@ -1,19 +1,21 @@
-package com.example.jwt_hexagonal_v2.adapter.in.web.exception.messages;
+package com.example.jwt_hexagonal_v2.adapter.in.web.exception;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.Instant;
+
 @Data
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse {
+
     private int status;
-    private String error;
+    private String code;
     private String message;
     private String path;
-    private String timestamp;
+    private Instant timestamp;
     private String requestId;
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Object details;
 }

@@ -1,8 +1,9 @@
 package com.example.jwt_hexagonal_v2.domain.service;
 
-import com.example.jwt_hexagonal_v2.adapter.in.web.exception.BadRequestException;
-import com.example.jwt_hexagonal_v2.adapter.in.web.exception.UserNotFoundException;
-import com.example.jwt_hexagonal_v2.adapter.in.web.exception.messages.ErrorMessages;
+import com.example.jwt_hexagonal_v2.domain.exception.InvalidRefreshTokenException;
+import com.example.jwt_hexagonal_v2.domain.exception.RefreshTokenExpiredException;
+import com.example.jwt_hexagonal_v2.domain.exception.UserNotFoundException;
+import com.example.jwt_hexagonal_v2.domain.messages.ErrorMessages;
 import com.example.jwt_hexagonal_v2.domain.model.RefreshToken;
 import com.example.jwt_hexagonal_v2.domain.model.User;
 import com.example.jwt_hexagonal_v2.domain.port.in.AuthUseCase;
@@ -22,7 +23,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+
 public class AuthService implements AuthUseCase {
 
     private final UserRepositoryPort userRepository;
@@ -32,6 +33,7 @@ public class AuthService implements AuthUseCase {
     private final RefreshTokenPort refreshTokenPort;
     private final JwtProperties jwtProperties;
 
+    @Transactional
     @Override
     public AuthResponse login(String email, String password) {
 
@@ -41,7 +43,6 @@ public class AuthService implements AuthUseCase {
             throw new RuntimeException("Invalid credentials");
         }
 
-        // ✅ TÜM CİHAZLARDAN LOGOUT
         refreshTokenPort.deleteAllByUserId(user.getId());
         refreshTokenPort.flush();
 
@@ -55,34 +56,29 @@ public class AuthService implements AuthUseCase {
 
         String encrypted = cryptoService.encrypt(rawRefreshToken);
 
-        RefreshToken existing = refreshTokenPort.findByToken(encrypted)
-                .orElseThrow(() ->
-                        new RuntimeException("Invalid refresh token")
-                );
+        RefreshToken existing = refreshTokenPort.findByToken(encrypted).orElseThrow(InvalidRefreshTokenException::new);
 
         // 🔥 GERÇEK REUSE DETECTION
         if (existing.isUsed()) {
             handleReuseAttack(existing.getUser().getId());
-            throw new RuntimeException("Refresh token reuse detected");
+            throw new InvalidRefreshTokenException();
         }
 
         if (existing.getExpiryDate().isBefore(Instant.now())) {
             refreshTokenPort.delete(existing);
             refreshTokenPort.flush();
-            throw new RuntimeException("Refresh token expired");
+            throw new RefreshTokenExpiredException(
+                    ErrorMessages.REFRESH_TOKEN_EXPIRED);
         }
 
-        // ✅ TOKEN ARTIK KULLANILDI
         existing.setUsed(true);
         refreshTokenPort.save(existing);
         refreshTokenPort.flush();
 
-        // ✅ YENİ TOKEN ÜRET
         return createTokens(existing.getUser());
     }
 
-
-
+    @Transactional
     @Override
     public void logout(String rawRefreshToken) {
 

@@ -1,4 +1,4 @@
-package com.example.jwt_hexagonal_v2.adapter.in.web.exception.messages;
+package com.example.jwt_hexagonal_v2.domain.messages;
 
 public class ErrorMessages {
 
@@ -6,6 +6,7 @@ public class ErrorMessages {
     public static final String USER_NOT_FOUND = "Email adresi '%s' ile kayıtlı kullanıcı bulunamadı";
     public static final String INVALID_CREDENTIALS = "Email veya şifre hatalı";
     public static final String USER_DISABLED = "Hesabınız devre dışı bırakılmış. Lütfen destek ekibi ile iletişime geçin";
+    public static final String INVALID_REFRESH_TOKEN = "Geçersiz refresh token";
 
     public final static String RESOURCE_NOT_FOUNT_EXCEPTION = "Resource with id %s not found";
     public final static String ROLE_NOT_FOUNT_EXCEPTION = "Role : %s not found";
@@ -26,7 +27,7 @@ public class ErrorMessages {
     public final static String USER_CANT_BE_DELETED_MESAGE = "User couldn't be deleted. User is used by a reservation";
     public final static String EXCEL_REPORT_ERROR_MESAGE = "Error occured while gererating excel report";
 
-
+    public static final String REFRESH_TOKEN_EXPIRED = "Refresh token expired";
 
 
 

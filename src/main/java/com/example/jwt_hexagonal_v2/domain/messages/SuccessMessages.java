@@ -1,4 +1,4 @@
-package com.example.jwt_hexagonal_v2.adapter.in.web.exception.messages;
+package com.example.jwt_hexagonal_v2.domain.messages;
 
 public class SuccessMessages {
 

@@ -1,0 +1,12 @@
+package com.example.jwt_hexagonal_v2.domain.exception;
+
+public class InvalidRefreshTokenException extends RuntimeException {
+
+    public InvalidRefreshTokenException() {
+        super("Geçersiz refresh token");
+    }
+
+    public InvalidRefreshTokenException(String message) {
+        super(message);
+    }
+}

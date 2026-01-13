@@ -1,7 +1,8 @@
 package com.example.jwt_hexagonal_v2.adapter.in.web.exception;
 
 
-import com.example.jwt_hexagonal_v2.adapter.in.web.exception.messages.ErrorResponse;
+import com.example.jwt_hexagonal_v2.domain.exception.*;
+import com.example.jwt_hexagonal_v2.domain.messages.ErrorMessages;
 import io.jsonwebtoken.MalformedJwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -50,10 +52,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .code(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message("Validasyon hatası")
                 .path(extractPath(request))
-                .timestamp(String.valueOf(LocalDateTime.now()))
+                .requestId(getRequestId(request))
+                .timestamp(Instant.now())
                 .details(errors)
                 .build();
 
@@ -73,10 +76,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .code(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message("Geçersiz veya eksik request body")
                 .path(extractPath(request))
-                .timestamp(String.valueOf(LocalDateTime.now()))
+                .requestId(getRequestId(request))
+                .timestamp(Instant.now())
                 .build();
 
         return ResponseEntity
@@ -96,10 +100,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .code(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message(String.format("Zorunlu parametre eksik: '%s'", ex.getParameterName()))
                 .path(extractPath(request))
-                .timestamp(String.valueOf(LocalDateTime.now()))
+                .requestId(getRequestId(request))
+                .timestamp(Instant.now())
                 .build();
 
         return ResponseEntity
@@ -171,7 +176,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildError(HttpStatus.UNAUTHORIZED, "Kimlik doğrulama başarısız", request);
     }
 
-
+    @ExceptionHandler(RefreshTokenExpiredException.class)
+    public ResponseEntity<Object> handleRefreshTokenExpired(
+            RefreshTokenExpiredException ex, WebRequest request
+    ) {
+        return buildError(HttpStatus.UNAUTHORIZED, ErrorMessages.REFRESH_TOKEN_EXPIRED, request);
+    }
 
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -189,6 +199,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, message, request);
     }
 
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<Object> handleInvalidRefreshToken(
+            InvalidRefreshTokenException ex,
+            WebRequest request) {
+
+        return buildError(
+                HttpStatus.UNAUTHORIZED,
+                ErrorMessages.INVALID_REFRESH_TOKEN,
+                request
+        );
+    }
 
     @ExceptionHandler(MalformedJwtException.class)
     public ResponseEntity<Object> handleMalformedJwt(
@@ -211,10 +232,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                .code(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
                 .message("Bir hata oluştu. Lütfen daha sonra tekrar deneyin.")
                 .path(extractPath(request))
-                .timestamp(String.valueOf(LocalDateTime.now()))
+                .timestamp(Instant.now())
+                .requestId(getRequestId(request))
                 .build();
 
         return ResponseEntity
@@ -230,15 +252,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(status)
                 .body(ErrorResponse.builder()
                         .status(status.value())
-                        .error(status.getReasonPhrase())
+                        .code(status.getReasonPhrase())
                         .message(message)
                         .path(extractPath(request))
-                        .timestamp(Instant.now().toString())
+                        .requestId(getRequestId(request))
+                        .timestamp(Instant.now())
                         .build());
     }
 
 
     private String extractPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
+    }
+
+
+    private String getRequestId(WebRequest request) {
+        Object id = ((ServletWebRequest) request)
+                .getRequest()
+                .getAttribute("requestId");
+        return id != null ? id.toString() : null;
     }
 }
