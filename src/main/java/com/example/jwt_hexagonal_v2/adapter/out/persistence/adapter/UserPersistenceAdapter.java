@@ -1,6 +1,5 @@
 package com.example.jwt_hexagonal_v2.adapter.out.persistence.adapter;
 
-
 import com.example.jwt_hexagonal_v2.adapter.out.persistence.jpa.UserJpaRepository;
 import com.example.jwt_hexagonal_v2.domain.enums.AuthProvider;
 import com.example.jwt_hexagonal_v2.domain.model.User;

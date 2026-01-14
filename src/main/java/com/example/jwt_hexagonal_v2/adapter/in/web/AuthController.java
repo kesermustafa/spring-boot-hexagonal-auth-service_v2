@@ -4,17 +4,22 @@ import com.example.jwt_hexagonal_v2.adapter.in.web.dto.*;
 import com.example.jwt_hexagonal_v2.adapter.in.web.dto.response.ApiResponse;
 import com.example.jwt_hexagonal_v2.adapter.in.web.dto.response.UserResponse;
 import com.example.jwt_hexagonal_v2.adapter.in.web.mapper.UserMapper;
+import com.example.jwt_hexagonal_v2.domain.exception.UserNotFoundException;
 import com.example.jwt_hexagonal_v2.domain.model.User;
 import com.example.jwt_hexagonal_v2.domain.port.in.AuthUseCase;
 import com.example.jwt_hexagonal_v2.domain.port.in.UserUseCase;
 import com.example.jwt_hexagonal_v2.domain.port.out.UserRepositoryPort;
+import com.example.jwt_hexagonal_v2.domain.service.AuthService;
 import com.example.jwt_hexagonal_v2.domain.service.dto.AuthResponse;
+import com.example.jwt_hexagonal_v2.security.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -84,14 +89,11 @@ public class AuthController {
     }
 
     @PostMapping("/google/link")
-    public ResponseEntity<Void> linkGoogle(@RequestBody @Valid LinkGoogleRequest request,
-                                           Authentication authentication) {
+    public ResponseEntity<Void> linkGoogle(@RequestBody @Valid LinkGoogleRequest request) {
 
-        UUID userId = (UUID) authentication.getPrincipal();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        UUID userId = SecurityUtils.getCurrentUserId();
 
-        authUseCase.linkGoogleAccount(user.getEmail(), request.idToken());
+        authUseCase.linkGoogleAccount(userId, request.idToken());
 
         return ResponseEntity.noContent().build();
     }

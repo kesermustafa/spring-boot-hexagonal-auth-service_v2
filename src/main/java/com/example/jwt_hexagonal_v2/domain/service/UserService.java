@@ -4,15 +4,21 @@ import com.example.jwt_hexagonal_v2.adapter.in.web.dto.RegisterRequest;
 import com.example.jwt_hexagonal_v2.domain.enums.AuthProvider;
 import com.example.jwt_hexagonal_v2.domain.enums.Role;
 import com.example.jwt_hexagonal_v2.domain.exception.EmailAlreadyExistsException;
+import com.example.jwt_hexagonal_v2.domain.exception.UserNotFoundException;
 import com.example.jwt_hexagonal_v2.domain.messages.ErrorMessages;
 import com.example.jwt_hexagonal_v2.domain.model.User;
 import com.example.jwt_hexagonal_v2.domain.port.in.UserUseCase;
 import com.example.jwt_hexagonal_v2.domain.port.out.RefreshTokenPort;
 import com.example.jwt_hexagonal_v2.domain.port.out.UserRepositoryPort;
+import com.example.jwt_hexagonal_v2.security.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +36,6 @@ public class UserService implements UserUseCase {
 
         var existingOpt = userRepository.findByEmail(normalizedEmail);
 
-        // 1) Email yoksa -> normal LOCAL kayıt
         if (existingOpt.isEmpty()) {
             User newUser = User.builder()
                     .email(normalizedEmail)
@@ -43,11 +48,9 @@ public class UserService implements UserUseCase {
             return userRepository.save(newUser);
         }
 
-        // 2) Email varsa
+
         User existing = existingOpt.get();
 
-        // 2.a) Eğer bu email Google ile oluşturulmuşsa -> conflict atma,
-        //      şifre set edip LOCAL login’i aç (hesabı "link" etmiş oluyorsun)
         if (existing.getProvider() == AuthProvider.GOOGLE) {
 
             existing.setEmail(normalizedEmail);
@@ -72,6 +75,21 @@ public class UserService implements UserUseCase {
         return email.trim().toLowerCase();
     }
 
+    @Override
+    public User findById(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() ->
+                        new UserNotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, id))
+                );
+    }
+
+
+    public User getCurrentUser() {
+        String email = SecurityUtils.getCurrentUserEmail();
+        return userRepository.findByEmail(email).orElseThrow(() ->
+                new UserNotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, email))
+        );
+    }
 
 }
 

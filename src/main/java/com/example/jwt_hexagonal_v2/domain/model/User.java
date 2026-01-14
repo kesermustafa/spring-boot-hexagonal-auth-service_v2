@@ -50,7 +50,6 @@ public class User {
     @Builder.Default
     private boolean enabled = true;
 
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<RefreshToken> refreshTokens = new ArrayList<>();

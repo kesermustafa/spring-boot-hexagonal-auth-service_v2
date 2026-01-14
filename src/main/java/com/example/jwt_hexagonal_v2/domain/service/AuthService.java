@@ -19,7 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 
 
@@ -64,22 +63,22 @@ public class AuthService implements AuthUseCase {
         String encrypted = cryptoService.encrypt(rawRefreshToken);
         Instant now = Instant.now();
 
-        // ✅ 1) Token’ı kilitleyerek oku (race condition engeli)
+
         RefreshToken token = refreshTokenPort.lockByToken(encrypted)
                 .orElseThrow(() -> new InvalidRefreshTokenException(ErrorMessages.INVALID_REFRESH_TOKEN));
 
-        // ✅ 2) Expired mı?
+
         if (token.getExpiryDate().isBefore(now)) {
             throw new RefreshTokenExpiredException(ErrorMessages.REFRESH_TOKEN_EXPIRED);
         }
 
-        // ✅ 3) One-time use kontrolü (reuse)
+
         if (token.isUsed()) {
             handleReuseAttack(token.getUser().getId());
             throw new SecurityViolationException(ErrorMessages.REFRESH_TOKEN_REUSE_DETECTED);
         }
 
-        // ✅ 4) Consume et
+
         token.setUsed(true);
         refreshTokenPort.save(token);
         refreshTokenPort.flush();
@@ -87,40 +86,6 @@ public class AuthService implements AuthUseCase {
         // ✅ 5) Rotate: yeni access + yeni refresh üret
         return createTokens(token.getUser());
     }
-
-
-/*    @Override
-    @Transactional
-    public AuthResponse refresh(String rawRefreshToken) {
-
-        String encrypted = cryptoService.encrypt(rawRefreshToken);
-        Instant now = Instant.now();
-
-        Optional<RefreshToken> validOpt =
-                refreshTokenPort.findValidByToken(encrypted, now);
-
-        if (validOpt.isPresent()) {
-            RefreshToken valid = validOpt.get();
-
-            valid.setUsed(true);
-            refreshTokenPort.save(valid);
-            refreshTokenPort.flush();
-
-            return createTokens(valid.getUser());
-        }
-
-        RefreshToken existing = refreshTokenPort.findByToken(encrypted)
-                .orElseThrow(() -> new InvalidRefreshTokenException(ErrorMessages.INVALID_REFRESH_TOKEN));
-
-        // ✅ 3) DB'de var ama valid değil → reuse veya expired
-        if (existing.isUsed()) {
-            handleReuseAttack(existing.getUser().getId());
-            throw new SecurityViolationException(ErrorMessages.REFRESH_TOKEN_REUSE_DETECTED);
-        }
-
-
-        throw new RefreshTokenExpiredException(ErrorMessages.REFRESH_TOKEN_EXPIRED);
-    }*/
 
 
     @Transactional
@@ -152,8 +117,6 @@ public class AuthService implements AuthUseCase {
                 .used(false)
                 .build();
 
-     /* //  user.addRefreshToken(refreshToken);*/
-
         refreshTokenPort.save(refreshToken);
         refreshTokenPort.flush();
 
@@ -162,7 +125,6 @@ public class AuthService implements AuthUseCase {
                 .refreshToken(rawRefreshToken)
                 .build();
     }
-
 
 
     private void handleReuseAttack(UUID userId) {
@@ -196,25 +158,23 @@ public class AuthService implements AuthUseCase {
 
         final String normalizedEmail = email.trim().toLowerCase();
 
-        // 1) Önce Google kimliği ile ara
+
         User user = userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, sub)
                 .orElseGet(() -> {
-                    // 2) Yoksa email ile ara (LOCAL hesap olabilir)
+
                     return userRepository.findByEmail(normalizedEmail)
                             .map(existing -> {
-                                // Bu email zaten var → linkle
+
                                 if (existing.getProvider() == AuthProvider.LOCAL || existing.getProvider() == null) {
                                     existing.setProvider(AuthProvider.GOOGLE);
                                     existing.setProviderId(sub);
                                     return userRepository.save(existing);
                                 }
-                                // Başka provider’a bağlıysa (örn Apple) politika senin:
-                                // - izin verme
-                                // - veya multi-provider tasarımına geç
+
                                 throw new SecurityViolationException("Account is already linked to another provider");
                             })
                             .orElseGet(() -> {
-                                // 3) Hiç yoksa yeni kullanıcı oluştur
+
                                 User newUser = User.builder()
                                         .email(normalizedEmail)
                                         .password(passwordEncoder.encode(UUID.randomUUID().toString()))
@@ -226,7 +186,7 @@ public class AuthService implements AuthUseCase {
                             });
                 });
 
-        // Email sync (opsiyonel)
+
         if (!normalizedEmail.equalsIgnoreCase(user.getEmail())) {
             user.setEmail(normalizedEmail);
             userRepository.save(user);
@@ -239,20 +199,17 @@ public class AuthService implements AuthUseCase {
     }
 
 
-    @Override
+   /* @Override
     @Transactional
     public void linkGoogleAccount(String currentUserEmail, String googleIdToken) {
 
-        // 1️⃣ LOCAL user (zaten login olmuş)
         User user = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 2️⃣ Zaten Google bağlıysa idempotent davran
         if (user.getProvider() == AuthProvider.GOOGLE && user.getProviderId() != null) {
             return;
         }
 
-        // 3️⃣ Google token doğrula
         var payload = googleTokenVerifierService.verify(googleIdToken);
 
         String googleEmail = payload.getEmail();
@@ -271,7 +228,6 @@ public class AuthService implements AuthUseCase {
             throw new InvalidGoogleTokenException("Google subject missing");
         }
 
-        // 4️⃣ Email güvenliği (aynı hesap mı?)
         String normalizedGoogleEmail = googleEmail.trim().toLowerCase();
         String normalizedLocalEmail = currentUserEmail.trim().toLowerCase();
 
@@ -281,7 +237,7 @@ public class AuthService implements AuthUseCase {
             );
         }
 
-        // 5️⃣ Bu Google hesabı başka kullanıcıya bağlı mı?
+
         userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, googleSub)
                 .ifPresent(other -> {
                     if (!other.getId().equals(user.getId())) {
@@ -291,22 +247,91 @@ public class AuthService implements AuthUseCase {
                     }
                 });
 
-        // 6️⃣ Link işlemi
         user.setProvider(AuthProvider.GOOGLE);
         user.setProviderId(googleSub);
         userRepository.save(user);
 
-        // 7️⃣ Güvenlik: tüm refresh tokenları iptal et
+        refreshTokenPort.deleteAllByUserId(user.getId());
+        refreshTokenPort.flush();
+    }*/
+
+
+    @Override
+    @Transactional
+    public void linkGoogleAccount(UUID userId, String googleIdToken) {
+
+        // 1) LOCAL user (zaten login olmuş) -> artık email değil userId ile bulunur
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 2) Zaten Google bağlıysa idempotent davran
+        if (user.getProvider() == AuthProvider.GOOGLE && user.getProviderId() != null) {
+            return;
+        }
+
+        // 3) Google token doğrula
+        var payload = googleTokenVerifierService.verify(googleIdToken);
+
+        String googleEmail = payload.getEmail();
+        Boolean emailVerified = payload.getEmailVerified();
+        String googleSub = payload.getSubject();
+
+        if (!Boolean.TRUE.equals(emailVerified)) {
+            throw new InvalidGoogleTokenException("Google email is not verified");
+        }
+        if (googleEmail == null || googleEmail.isBlank()) {
+            throw new InvalidGoogleTokenException("Google email missing");
+        }
+        if (googleSub == null || googleSub.isBlank()) {
+            throw new InvalidGoogleTokenException("Google subject missing");
+        }
+
+        // 4) Email güvenliği: token email'i ile mevcut kullanıcının email'i aynı olmalı
+        String normalizedGoogleEmail = googleEmail.trim().toLowerCase();
+        String normalizedUserEmail = user.getEmail().trim().toLowerCase();
+
+        if (!normalizedGoogleEmail.equals(normalizedUserEmail)) {
+            throw new InvalidGoogleTokenException(
+                    "Google account email does not match logged-in user email"
+            );
+        }
+
+        // 5) Bu Google hesabı başka kullanıcıya bağlı mı?
+        userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, googleSub)
+                .ifPresent(other -> {
+                    if (!other.getId().equals(user.getId())) {
+                        throw new SecurityViolationException(
+                                "This Google account is already linked to another user"
+                        );
+                    }
+                });
+
+        // 6) Link işlemi
+        user.setProvider(AuthProvider.GOOGLE);
+        user.setProviderId(googleSub);
+        userRepository.save(user);
+
+        // 7) Güvenlik: tüm refresh tokenları iptal et
         refreshTokenPort.deleteAllByUserId(user.getId());
         refreshTokenPort.flush();
     }
 
 
-    private User getUserByEmailOrThrow(String email) {
+
+    public User getUserByEmailOrThrow(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new UserNotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, email))
                 );
     }
+
+
+    public User getUserByUserIdOrThrow(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new UserNotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, userId))
+                );
+    }
+
 
 }

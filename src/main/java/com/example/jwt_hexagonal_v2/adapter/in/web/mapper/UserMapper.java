@@ -12,7 +12,7 @@ public final class UserMapper {
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
-                user.isEnabled() // eğer eklemezsen -> true yaz
+                user.isEnabled()
         );
     }
 }

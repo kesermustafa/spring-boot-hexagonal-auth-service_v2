@@ -2,6 +2,8 @@ package com.example.jwt_hexagonal_v2.domain.port.in;
 
 import com.example.jwt_hexagonal_v2.domain.service.dto.AuthResponse;
 
+import java.util.UUID;
+
 public interface AuthUseCase {
 
     AuthResponse login(String email, String password);
@@ -14,5 +16,5 @@ public interface AuthUseCase {
 
     AuthResponse loginWithGoogle(String idToken);
 
-    void linkGoogleAccount(String currentUserEmail, String googleIdToken);
+    void linkGoogleAccount(UUID userId, String googleIdToken);
 }
