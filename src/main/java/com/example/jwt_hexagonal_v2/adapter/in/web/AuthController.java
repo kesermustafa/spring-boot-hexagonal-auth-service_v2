@@ -1,6 +1,9 @@
 package com.example.jwt_hexagonal_v2.adapter.in.web;
 
 import com.example.jwt_hexagonal_v2.adapter.in.web.dto.*;
+import com.example.jwt_hexagonal_v2.adapter.in.web.dto.response.ApiResponse;
+import com.example.jwt_hexagonal_v2.adapter.in.web.dto.response.UserResponse;
+import com.example.jwt_hexagonal_v2.adapter.in.web.mapper.UserMapper;
 import com.example.jwt_hexagonal_v2.domain.model.User;
 import com.example.jwt_hexagonal_v2.domain.port.in.AuthUseCase;
 import com.example.jwt_hexagonal_v2.domain.port.in.UserUseCase;
@@ -8,7 +11,6 @@ import com.example.jwt_hexagonal_v2.domain.port.out.UserRepositoryPort;
 import com.example.jwt_hexagonal_v2.domain.service.dto.AuthResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,18 +29,23 @@ public class AuthController {
     private final UserRepositoryPort userRepository;
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(
-            @RequestBody @Valid RegisterRequest request
-    ) {
-        userUseCase.register(request.email(), request.password());
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<ApiResponse<UserResponse>> register( @Valid @RequestBody RegisterRequest request) {
+
+        User user = userUseCase.register(request);
+
+        UserResponse response = UserMapper.toResponse(user);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "User registered successfully",
+                        response
+                )
+        );
     }
 
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDto> login(
-            @RequestBody @Valid LoginRequest request
-    ) {
+    public ResponseEntity<AuthResponseDto> login( @RequestBody @Valid LoginRequest request) {
         var result = authUseCase.login(
                 request.email(),
                 request.password()
@@ -53,9 +60,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponseDto> refresh(
-            @RequestBody @Valid RefreshTokenRequest request
-    ) {
+    public ResponseEntity<AuthResponseDto> refresh( @RequestBody @Valid RefreshTokenRequest request ) {
         var result = authUseCase.refresh(request.refreshToken());
 
         return ResponseEntity.ok(
@@ -68,9 +73,7 @@ public class AuthController {
 
 
     @PostMapping("/logout-all")
-    public ResponseEntity<Void> logoutAllDevices(
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
+    public ResponseEntity<Void> logoutAllDevices( @AuthenticationPrincipal UserDetails userDetails ) {
         authUseCase.logoutAllDevices(userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
