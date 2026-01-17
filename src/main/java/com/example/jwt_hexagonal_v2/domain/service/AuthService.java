@@ -200,63 +200,6 @@ public class AuthService implements AuthUseCase {
     }
 
 
-   /* @Override
-    @Transactional
-    public void linkGoogleAccount(String currentUserEmail, String googleIdToken) {
-
-        User user = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (user.getProvider() == AuthProvider.GOOGLE && user.getProviderId() != null) {
-            return;
-        }
-
-        var payload = googleTokenVerifierService.verify(googleIdToken);
-
-        String googleEmail = payload.getEmail();
-        Boolean emailVerified = payload.getEmailVerified();
-        String googleSub = payload.getSubject();
-
-        if (!Boolean.TRUE.equals(emailVerified)) {
-            throw new InvalidGoogleTokenException("Google email is not verified");
-        }
-
-        if (googleEmail == null || googleEmail.isBlank()) {
-            throw new InvalidGoogleTokenException("Google email missing");
-        }
-
-        if (googleSub == null || googleSub.isBlank()) {
-            throw new InvalidGoogleTokenException("Google subject missing");
-        }
-
-        String normalizedGoogleEmail = googleEmail.trim().toLowerCase();
-        String normalizedLocalEmail = currentUserEmail.trim().toLowerCase();
-
-        if (!normalizedGoogleEmail.equals(normalizedLocalEmail)) {
-            throw new InvalidGoogleTokenException(
-                    "Google account email does not match logged-in user email"
-            );
-        }
-
-
-        userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, googleSub)
-                .ifPresent(other -> {
-                    if (!other.getId().equals(user.getId())) {
-                        throw new SecurityViolationException(
-                                "This Google account is already linked to another user"
-                        );
-                    }
-                });
-
-        user.setProvider(AuthProvider.GOOGLE);
-        user.setProviderId(googleSub);
-        userRepository.save(user);
-
-        refreshTokenPort.deleteAllByUserId(user.getId());
-        refreshTokenPort.flush();
-    }*/
-
-
     @Override
     @Transactional
     public void linkGoogleAccount(UUID userId, String googleIdToken) {
