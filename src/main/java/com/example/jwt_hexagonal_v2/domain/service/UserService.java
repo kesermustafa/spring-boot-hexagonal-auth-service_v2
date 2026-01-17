@@ -13,8 +13,6 @@ import com.example.jwt_hexagonal_v2.domain.port.out.UserRepositoryPort;
 import com.example.jwt_hexagonal_v2.security.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +45,6 @@ public class UserService implements UserUseCase {
 
             return userRepository.save(newUser);
         }
-
 
         User existing = existingOpt.get();
 

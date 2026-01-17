@@ -1,5 +1,6 @@
 package com.example.jwt_hexagonal_v2.security;
 
+import com.example.jwt_hexagonal_v2.domain.enums.AuthProvider;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -20,15 +21,17 @@ public class JwtTokenProvider {
         this.accessKey = Keys.hmacShaKeyFor(props.secret().getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(UUID userId, String email, String role) {
+    public String generateAccessToken(UUID userId, String email, String role, AuthProvider provider) {
         long now = System.currentTimeMillis();
         Date issuedAt = new Date(now);
         Date expiresAt = new Date(now + props.accessTokenExpiration());
 
         return Jwts.builder()
-                .subject(userId.toString())
+                .subject( userId.toString())
+                .claim("userId",userId)
                 .claim("email", email)
-                .claim("role", role) // "USER" / "ADMIN"
+                .claim("role", role)
+                .claim("provider", provider)
                 .issuedAt(issuedAt)
                 .expiration(expiresAt)
                 .signWith(accessKey, Jwts.SIG.HS256)

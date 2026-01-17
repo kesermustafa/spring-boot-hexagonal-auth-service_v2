@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.example</groupId>
-    <artifactId>jwt_hexagonal_v2</artifactId>
+    <artifactId>auth-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>jwt_hexagonal_v2</name>
-    <description>jwt_hexagonal_v2</description>
+    <name>auth-service</name>
+    <description>auth-service</description>
     <url/>
     <licenses>
         <license/>
@@ -28,6 +28,8 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+
+        <spring-cloud.version>2025.1.0</spring-cloud.version>
     </properties>
 
     <dependencyManagement>
@@ -44,6 +46,13 @@
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-bom</artifactId>
                 <version>1.44.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -149,6 +158,12 @@
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

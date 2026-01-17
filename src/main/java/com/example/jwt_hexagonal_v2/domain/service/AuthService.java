@@ -104,7 +104,8 @@ public class AuthService implements AuthUseCase {
         String accessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(),
                 user.getEmail(),
-                user.getRole().name()
+                user.getRole().name(),
+                user.getProvider()
         );
 
         String rawRefreshToken = UUID.randomUUID().toString();
