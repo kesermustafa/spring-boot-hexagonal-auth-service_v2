@@ -105,7 +105,7 @@ public class AuthService implements AuthUseCase {
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
-                user.getProvider()
+                user.getProvider().name()
         );
 
         String rawRefreshToken = UUID.randomUUID().toString();
