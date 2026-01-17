@@ -45,6 +45,13 @@ public class AuthController {
     }
 
 
+    @GetMapping("/hello")
+    public String userHello() {
+        return "USER or ADMIN OK";
+    }
+
+
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login( @RequestBody @Valid LoginRequest request) {
         var result = authUseCase.login(

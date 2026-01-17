@@ -27,6 +27,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String token = authHeader.substring(7).trim();
+        if (token.isBlank() || !jwtTokenProvider.validateToken(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        UUID userId = jwtTokenProvider.getUserIdFromToken(token);
+        String role = jwtTokenProvider.getRoleFromToken(token);
+
+        List<GrantedAuthority> authorities = Collections.emptyList();
+        if (role != null && !role.isBlank()) {
+            String normalized = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+            authorities = List.of(new SimpleGrantedAuthority(normalized));
+        }
+
+        var authentication = new UsernamePasswordAuthenticationToken(userId, null, authorities);
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        filterChain.doFilter(request, response);
+    }
+
+
+/*    @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -75,7 +109,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
-    }
+    }*/
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {

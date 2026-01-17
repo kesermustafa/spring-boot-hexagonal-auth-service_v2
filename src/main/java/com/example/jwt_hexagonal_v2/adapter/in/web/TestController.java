@@ -17,5 +17,8 @@ public class TestController {
     public String adminHello() {
         return "ADMIN OK";
     }
+
+
+
 }
 
